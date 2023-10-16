@@ -1,0 +1,160 @@
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Custom Menu')
+    .addItem('Get Playlist Tracks', 'getPlaylistTracks')
+    .addItem('Convert Spotify to YouTube', 'convertSpotifyToYoutube')
+    .addItem('Create Playlist and Add Videos', 'generatePlaylistURLAndInsert')
+    .addItem('Add The Playlist To Your YouTube', 'createYouTubePlaylist')
+    .addToUi();
+}
+function getPlaylistTracks() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var playlistUrl = sheet.getRange('A2').getValue();
+  var refreshToken = 'AQDODUTunuhBs2hFZUnIJd0ApJzTkxFkjq3ZHvTVfpUqSg4Tk2RsCAlCWxwbfvuoHkml-SzNUW9FXeQL505MeNF7MF10Dq4TWOGqCLDS8FxrwA8nFxRGKtxw8j-xGya7Lfg';
+  
+  var playlistId = playlistUrl.split('playlist/')[1].split('?')[0];
+  
+  var accessToken = getAccessToken(refreshToken);
+  
+  var limit = 100; // Number of items to retrieve in each request
+  var offset = 0; // Offset for pagination
+  
+  // Check if cell A3 is empty and add headers if it is
+  if (!sheet.getRange('A3').getValue()) {
+    sheet.appendRow(['Title', 'Artist', 'Album', 'URL']);
+  }
+  
+  while (true) {
+    var options = {
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      },
+      muteHttpExceptions: true // Handle potential API rate limit issues
+    };
+    
+    var response = UrlFetchApp.fetch('https://api.spotify.com/v1/playlists/' + playlistId + '/tracks?limit=' + limit + '&offset=' + offset, options);
+    var data = JSON.parse(response.getContentText());
+    
+    if (data.items.length === 0) {
+      // No more items to retrieve, exit the loop
+      break;
+    }
+    
+    for (var i = 0; i < data.items.length; i++) {
+      var track = data.items[i].track;
+      sheet.appendRow([track.name, track.artists[0].name, track.album.name, track.external_urls.spotify]);
+    }
+    
+    offset += limit; // Increment offset for the next request
+  }
+}
+
+
+function getAccessToken(refreshToken) {
+  var clientId = 'b24aca16e6674c54b90cd298e5f81ba3';
+  var clientSecret = '1bf86aa365c34a64ab1cc3a7fc48013b';
+  
+  var options = {
+    method: 'post',
+    headers: {
+      'Authorization': 'Basic ' + Utilities.base64Encode(clientId + ':' + clientSecret)
+    },
+    payload: {
+      'grant_type': 'refresh_token',
+      'refresh_token': refreshToken
+    }
+  };
+  
+  var response = UrlFetchApp.fetch('https://accounts.spotify.com/api/token', options);
+  
+  var data = JSON.parse(response.getContentText());
+  
+  return data.access_token;
+}
+function convertSpotifyToYoutube() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var startRow = 4;  // Starting from row 2
+  var column = 4;  // Column D
+  
+  var spotifyUrls = sheet.getRange(startRow, column, sheet.getLastRow() - startRow + 1).getValues();
+  
+  for (var i = 0; i < spotifyUrls.length; i++) {
+    if (spotifyUrls[i][0]) {
+      var youtubeUrl = getYouTubeUrl(spotifyUrls[i][0]);
+      sheet.getRange(startRow + i, column + 1).setValue(youtubeUrl);
+    }
+  }
+}
+
+function getYouTubeUrl(spotifyUrl) {
+  var response = UrlFetchApp.fetch('https://api.song.link/v1-alpha.1/links?url=' + spotifyUrl);
+  
+  var data = JSON.parse(response.getContentText());
+  
+  return data.linksByPlatform.youtube.url;
+}
+/**
+ * Custom function to generate a YouTube playlist URL with video IDs from URLs in Column G
+ * and insert it into cell (c,1).
+ */
+function generatePlaylistURLAndInsert() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+
+  // Assuming the YouTube URLs are in Column E, starting from cell E5.
+  var youtubeURLColumnIndex = 5; // Column E
+  var startRow = 4; // Start reading URLs from cell G3
+
+  var videoIds = [];
+
+  // Extract YouTube video IDs from the sheet.
+  for (var i = startRow - 1; i < data.length; i++) {
+    var url = data[i][youtubeURLColumnIndex - 1]; // Subtract 1 to convert to 0-based index
+    if (url && url.startsWith('https://www.youtube.com/watch?v=')) {
+      var videoId = url.substring(url.indexOf('=') + 1);
+      videoIds.push(videoId);
+    }
+  }
+
+  // Generate the playlist URL with video IDs.
+  var playlistURL = 'https://www.youtube.com/watch_videos?video_ids=' + videoIds.join(',');
+
+  // Insert the playlist URL into cell (B,2).
+  sheet.getRange(1, 3).setValue(playlistURL);
+
+  // Display a message indicating that the URL has been inserted.
+  Browser.msgBox('Playlist URL inserted in cell (c,1): ' + playlistURL);
+}
+function createYouTubePlaylist() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getRange('E4:E').getValues(); // Adjust this range according to your data
+  var urls = data.flat().filter(String); // This will get all non-empty cells in column G
+  
+  var playlist = YouTube.Playlists.insert({
+    snippet: {
+      title: 'My Playlist',
+      description: 'A private playlist created with the YouTube API'
+    },
+    status: {
+      privacyStatus: 'public'
+    }
+  }, 'snippet,status');
+  
+  urls.forEach(function(url) {
+    var videoId = url.split('v=')[1];
+    var ampersandPosition = videoId.indexOf('&');
+    if(ampersandPosition != -1) {
+      videoId = videoId.substring(0, ampersandPosition);
+    }
+    
+    YouTube.PlaylistItems.insert({
+      snippet: {
+        playlistId: playlist.id,
+        resourceId: {
+          kind: 'youtube#video',
+          videoId: videoId
+        }
+      }
+    }, 'snippet');
+  });
+}

@@ -10,7 +10,7 @@ function onOpen() {
 function getPlaylistTracks() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var playlistUrl = sheet.getRange('A2').getValue();
-  var refreshToken = 'AQDODUTunuhBs2hFZUnIJd0ApJzTkxFkjq3ZHvTVfpUqSg4Tk2RsCAlCWxwbfvuoHkml-SzNUW9FXeQL505MeNF7MF10Dq4TWOGqCLDS8FxrwA8nFxRGKtxw8j-xGya7Lfg';
+  var refreshToken = 'your spotify refresh token';
   
   var playlistId = playlistUrl.split('playlist/')[1].split('?')[0];
   
@@ -51,8 +51,8 @@ function getPlaylistTracks() {
 
 
 function getAccessToken(refreshToken) {
-  var clientId = 'b24aca16e6674c54b90cd298e5f81ba3';
-  var clientSecret = '1bf86aa365c34a64ab1cc3a7fc48013b';
+  var clientId = 'Spotify Client ID';
+  var clientSecret = 'Spotify Client Secret';
   
   var options = {
     method: 'post',

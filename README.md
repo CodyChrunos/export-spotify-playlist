@@ -1,11 +1,20 @@
 # export-spotify-playlist
 Export Spotify Playlist to Google Sheet and convert to YouTube.
 
+Sure, here's a description of the provided Google Apps Script for exporting tracks from a Spotify playlist to a Google Sheet:
+
 **Description:**
 
 This Google Apps Script is designed to interact with the Spotify API and Google Sheets to retrieve and store information about tracks from a Spotify playlist. The script allows you to export the playlist's tracks, including their titles, artists, albums, and Spotify URLs, into a Google Sheet. Additionally, it features pagination to handle playlists with more than 100 tracks and ensures that the Google Sheet headers are added only if a specific cell (A3) is empty.
 
-**How to Use:**
+**Quick Setup:**
+
+- Get the Google Sheet I made from [here](https://chrunos.com/export-spotify-playlist/#export+spotify+playlist+to+google+sheet) and make a copy of it.
+- In your copy of the sheet, delete everything.
+- Input the Spotify Playlist URL in A2.
+- Click on “Custom Menu” and select “Get Playlist Tracks”.
+
+**Manual Setup:**
 
 1. **Set Up the Google Sheet:**
    - Create a Google Sheet or open an existing one.
@@ -36,3 +45,4 @@ This Google Apps Script is designed to interact with the Spotify API and Google 
    - The script will generate headers in the Google Sheet only if cell A3 is left empty. If you prefer to manage headers manually, simply fill in cell A3 with your desired header text.
 
 This script provides a convenient way to export Spotify playlist information to a Google Sheet for various purposes, including analysis, sharing, and more.
+

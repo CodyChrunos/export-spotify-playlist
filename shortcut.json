@@ -1,6 +1,6 @@
 {
-  "version": "1.5",
+  "version": "1.6",
   "url": "https://chrunos.com/move-spotify-playlist-to-apple-music/#method-3-convert-spotify-playlist-to-apple-music-with-shortcuts",
-  "notes": "Better Match results for exporting Spotify Playlist to Apple Music",
+  "notes": "Fix API rate limit issue.",
   "release": "April 16, 2024"
 }
